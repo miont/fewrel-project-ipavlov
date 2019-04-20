@@ -20,7 +20,6 @@ class FileDataLoader:
 class JSONFileDataLoader(FileDataLoader):
     def _load_preprocessed_file(self):
         name_prefix = '.'.join(self.file_name.split('/')[-1].split('.')[:-1])
-        word_vec_name_prefix = '.'.join(self.word_vec_file_name.split('/')[-1].split('.')[:-1])
         processed_data_dir = '_processed_data'
         if not os.path.isdir(processed_data_dir):
             return False
@@ -30,16 +29,13 @@ class JSONFileDataLoader(FileDataLoader):
         mask_npy_file_name = os.path.join(processed_data_dir, name_prefix + '_mask.npy')
         length_npy_file_name = os.path.join(processed_data_dir, name_prefix + '_length.npy')
         rel2scope_file_name = os.path.join(processed_data_dir, name_prefix + '_rel2scope.json')
-        word_vec_mat_file_name = os.path.join(processed_data_dir, word_vec_name_prefix + '_mat.npy')
-        word2id_file_name = os.path.join(processed_data_dir, word_vec_name_prefix + '_word2id.json')
+        
         if not os.path.exists(word_npy_file_name) or \
            not os.path.exists(pos1_npy_file_name) or \
            not os.path.exists(pos2_npy_file_name) or \
            not os.path.exists(mask_npy_file_name) or \
            not os.path.exists(length_npy_file_name) or \
-           not os.path.exists(rel2scope_file_name) or \
-           not os.path.exists(word_vec_mat_file_name) or \
-           not os.path.exists(word2id_file_name):
+           not os.path.exists(rel2scope_file_name):
             return False
         print("Pre-processed files exist. Loading them...")
         self.data_word = np.load(word_npy_file_name)
@@ -48,15 +44,13 @@ class JSONFileDataLoader(FileDataLoader):
         self.data_mask = np.load(mask_npy_file_name)
         self.data_length = np.load(length_npy_file_name)
         self.rel2scope = json.load(open(rel2scope_file_name))
-        self.word_vec_mat = np.load(word_vec_mat_file_name)
-        self.word2id = json.load(open(word2id_file_name))
         if self.data_word.shape[1] != self.max_length:
             print("Pre-processed files don't match current settings. Reprocessing...")
             return False
         print("Finish loading")
         return True
 
-    def __init__(self, file_name, word_vec_file_name, max_length=40, case_sensitive=False, reprocess=False, cuda=True):
+    def __init__(self, file_name, max_length=40, case_sensitive=False, reprocess=False, cuda=True):
         '''
         file_name: Json file storing the data in the following format
             {
@@ -75,19 +69,13 @@ class JSONFileDataLoader(FileDataLoader):
                     ]
                 ...
             }
-        word_vec_file_name: Json file storing word vectors in the following format
-            [
-                {'word': 'the', 'vec': [0.418, 0.24968, ...]},
-                {'word': ',', 'vec': [0.013441, 0.23682, ...]},
-                ...
-            ]
+        
         max_length: The length that all the sentences need to be extend to.
         case_sensitive: Whether the data processing is case-sensitive, default as False.
         reprocess: Do the pre-processing whether there exist pre-processed files, default as False.
         cuda: Use cuda or not, default as True.
         '''
         self.file_name = file_name
-        self.word_vec_file_name = word_vec_file_name
         self.case_sensitive = case_sensitive
         self.max_length = max_length
         self.cuda = cuda
@@ -96,46 +84,20 @@ class JSONFileDataLoader(FileDataLoader):
             # Check files
             if file_name is None or not os.path.isfile(file_name):
                 raise Exception("[ERROR] Data file doesn't exist")
-            if word_vec_file_name is None or not os.path.isfile(word_vec_file_name):
-                raise Exception("[ERROR] Word vector file doesn't exist")
 
             # Load files
             print("Loading data file...")
             self.ori_data = json.load(open(self.file_name, "r"))
             print("Finish loading")
-            print("Loading word vector file...")
-            self.ori_word_vec = json.load(open(self.word_vec_file_name, "r"))
-            print("Finish loading")
             
             # Eliminate case sensitive
             if not case_sensitive:
-                print("Elimiating case sensitive problem...")
+                print("Eliminating case sensitive problem...")
                 for relation in self.ori_data:
                     for ins in self.ori_data[relation]:
                         for i in range(len(ins['tokens'])):
                             ins['tokens'][i] = ins['tokens'][i].lower()
                 print("Finish eliminating")
-
-      
-            # Pre-process word vec
-            self.word2id = {}
-            self.word_vec_tot = len(self.ori_word_vec)
-            UNK = self.word_vec_tot
-            BLANK = self.word_vec_tot + 1
-            self.word_vec_dim = len(self.ori_word_vec[0]['vec'])
-            print("Got {} words of {} dims".format(self.word_vec_tot, self.word_vec_dim))
-            print("Building word vector matrix and mapping...")
-            self.word_vec_mat = np.zeros((self.word_vec_tot, self.word_vec_dim), dtype=np.float32)
-            for cur_id, word in enumerate(self.ori_word_vec):
-                w = word['word']
-                if not case_sensitive:
-                    w = w.lower()
-                self.word2id[w] = cur_id
-                self.word_vec_mat[cur_id, :] = word['vec']
-                self.word_vec_mat[cur_id] = self.word_vec_mat[cur_id] / np.sqrt(np.sum(self.word_vec_mat[cur_id] ** 2))
-            self.word2id['UNK'] = UNK
-            self.word2id['BLANK'] = BLANK
-            print("Finish building")
 
             # Pre-process data
             print("Pre-processing data...")
@@ -193,7 +155,7 @@ class JSONFileDataLoader(FileDataLoader):
 
             print("Storing processed files...")
             name_prefix = '.'.join(file_name.split('/')[-1].split('.')[:-1])
-            word_vec_name_prefix = '.'.join(word_vec_file_name.split('/')[-1].split('.')[:-1])
+            
             processed_data_dir = '_processed_data'
             if not os.path.isdir(processed_data_dir):
                 os.mkdir(processed_data_dir)
@@ -203,8 +165,7 @@ class JSONFileDataLoader(FileDataLoader):
             np.save(os.path.join(processed_data_dir, name_prefix + '_mask.npy'), self.data_mask)
             np.save(os.path.join(processed_data_dir, name_prefix + '_length.npy'), self.data_length)
             json.dump(self.rel2scope, open(os.path.join(processed_data_dir, name_prefix + '_rel2scope.json'), 'w'))
-            np.save(os.path.join(processed_data_dir, word_vec_name_prefix + '_mat.npy'), self.word_vec_mat)
-            json.dump(self.word2id, open(os.path.join(processed_data_dir, word_vec_name_prefix + '_word2id.json'), 'w'))
+            
             print("Finish storing")
 
     def next_one(self, N, K, Q):

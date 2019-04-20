@@ -3,8 +3,6 @@ import sklearn.metrics
 import numpy as np
 import sys
 import time
-from . import sentence_encoder
-from . import data_loader
 import torch
 from torch import autograd, optim, nn
 from torch.autograd import Variable
