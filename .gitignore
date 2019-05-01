@@ -106,3 +106,9 @@ venv.bak/
 .vscode
 
 data/*.json
+
+checkpoint/*
+
+_processed_data
+data/fasttext
+data/glove

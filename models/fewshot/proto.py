@@ -9,7 +9,7 @@ from torch.nn import functional as F
 class Proto(FewShotREModel):
     
     def __init__(self, sentence_encoder, hidden_size=230):
-        super.__init__(self, sentence_encoder)
+        super().__init__(sentence_encoder)
         self.hidden_size = hidden_size
         self.fc = nn.Linear(hidden_size, hidden_size)
         self.drop = nn.Dropout()

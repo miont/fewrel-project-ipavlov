@@ -45,7 +45,7 @@ class FewShotREModel(nn.Module):
         label: Label with whatever size
         return: [Accuracy] (A single value)
         '''
-        return torch.mean((pred.view(-1) == label.view(-1)).type(torch.FloatTensor))
+        return torch.mean((pred.view(-1) == label.view(-1)).float())
 
     
 class FewShotREFramework:
@@ -136,7 +136,8 @@ class FewShotREFramework:
 
         # Training
         best_acc = 0
-        not_best_count = 0 # Stop training after several epochs without improvement.
+        not_best_count = 0 # Stop training after several validations without improvement.
+        patience_limit = 2
         iter_loss = 0.0
         iter_right = 0.0
         iter_sample = 0.0
@@ -172,6 +173,13 @@ class FewShotREFramework:
                     save_path = os.path.join(ckpt_dir, model_name + ".pth.tar")
                     torch.save({'state_dict': model.state_dict()}, save_path)
                     best_acc = acc
+                    not_best_count = 0
+                else:
+                    not_best_count += 1
+                    if not_best_count > patience_limit:
+                        print('Did not improve validation score over {} checks with limit of {}\n Stop training.'
+                            .format(not_best_count, patience_limit))
+                        break
                 
         print("\n####################\n")
         print("Finish training " + model_name)

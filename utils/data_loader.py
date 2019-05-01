@@ -50,7 +50,7 @@ class JSONFileDataLoader(FileDataLoader):
         print("Finish loading")
         return True
 
-    def __init__(self, file_name, max_length=40, case_sensitive=False, reprocess=False, cuda=True):
+    def __init__(self, file_name, max_length=40, case_sensitive=False, reprocess=True, cuda=True):
         '''
         file_name: Json file storing the data in the following format
             {
@@ -104,7 +104,8 @@ class JSONFileDataLoader(FileDataLoader):
             self.instance_tot = 0
             for relation in self.ori_data:
                 self.instance_tot += len(self.ori_data[relation])
-            self.data_word = np.zeros((self.instance_tot, self.max_length), dtype=np.int32)
+            self.data_word = np.empty((self.instance_tot, self.max_length), dtype=object)
+            self.data_word.fill('')
             self.data_pos1 = np.zeros((self.instance_tot, self.max_length), dtype=np.int32)
             self.data_pos2 = np.zeros((self.instance_tot, self.max_length), dtype=np.int32)
             self.data_mask = np.zeros((self.instance_tot, self.max_length), dtype=np.int32)
@@ -122,12 +123,9 @@ class JSONFileDataLoader(FileDataLoader):
                     cur_ref_data_word = self.data_word[i]         
                     for j, word in enumerate(words):
                         if j < max_length:
-                            if word in self.word2id:
-                                cur_ref_data_word[j] = self.word2id[word]
-                            else:
-                                cur_ref_data_word[j] = UNK
+                            cur_ref_data_word[j] = word
                     for j in range(j + 1, max_length):
-                        cur_ref_data_word[j] = BLANK
+                        cur_ref_data_word[j] = ''
                     self.data_length[i] = len(words)
                     if len(words) > max_length:
                         self.data_length[i] = max_length
@@ -151,7 +149,9 @@ class JSONFileDataLoader(FileDataLoader):
                     i += 1
                 self.rel2scope[relation][1] = i 
 
-            print("Finish pre-processing")     
+            print("Finish pre-processing")  
+
+            # print(self.data_word)   
 
             print("Storing processed files...")
             name_prefix = '.'.join(file_name.split('/')[-1].split('.')[:-1])
@@ -229,22 +229,20 @@ class JSONFileDataLoader(FileDataLoader):
             query['pos2'].append(current_query['pos2'])
             query['mask'].append(current_query['mask'])
             label.append(current_label)
-        support['word'] = Variable(torch.from_numpy(np.stack(support['word'], 0)).long().view(-1, self.max_length))
-        support['pos1'] = Variable(torch.from_numpy(np.stack(support['pos1'], 0)).long().view(-1, self.max_length)) 
-        support['pos2'] = Variable(torch.from_numpy(np.stack(support['pos2'], 0)).long().view(-1, self.max_length)) 
-        support['mask'] = Variable(torch.from_numpy(np.stack(support['mask'], 0)).long().view(-1, self.max_length)) 
-        query['word'] = Variable(torch.from_numpy(np.stack(query['word'], 0)).long().view(-1, self.max_length)) 
-        query['pos1'] = Variable(torch.from_numpy(np.stack(query['pos1'], 0)).long().view(-1, self.max_length)) 
-        query['pos2'] = Variable(torch.from_numpy(np.stack(query['pos2'], 0)).long().view(-1, self.max_length)) 
-        query['mask'] = Variable(torch.from_numpy(np.stack(query['mask'], 0)).long().view(-1, self.max_length)) 
-        label = Variable(torch.from_numpy(np.stack(label, 0).astype(np.int64)).long())
-        
-        # To cuda
+        # print(support['word'])
+        support['word'] = np.stack(support['word'], 0).reshape((-1, self.max_length))
+        support['pos1'] = np.stack(support['pos1'], 0).reshape((-1, self.max_length))
+        support['pos2'] = np.stack(support['pos2'], 0).reshape((-1, self.max_length))
+        support['mask'] = np.stack(support['mask'], 0).reshape((-1, self.max_length))
+        query['word'] = np.stack(query['word'], 0).reshape((-1, self.max_length))
+        query['pos1'] = np.stack(query['pos1'], 0).reshape((-1, self.max_length))
+        query['pos2'] = np.stack(query['pos2'], 0).reshape((-1, self.max_length))
+        query['mask'] = np.stack(query['mask'], 0).reshape((-1, self.max_length))
+        label = np.stack(label, 0).astype(np.int64)
+
+        if isinstance(label, np.ndarray):
+            label = torch.from_numpy(label).long()
         if self.cuda:
-            for key in support:
-                support[key] = support[key].cuda()
-            for key in query:
-                query[key] = query[key].cuda()
             label = label.cuda()
 
         return support, query, label
