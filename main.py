@@ -7,7 +7,10 @@ from utils.token_embedders.fasttext_embedder import FasttextEmbedder
 from framework import FewShotREFramework
 from models.sentence_encoders.cnn.sentence_encoder import CNNSentenceEncoder
 from models.sentence_encoders.inception_cnn.sentence_encoder import InceptionCNNSentenceEncoder
+from models.sentence_encoders.entity_aware_attention_rnn.sentence_encoder import EntityAwareAttentionRnn
 from models.fewshot.proto import Proto
+
+cuda = True
 
 model_name = 'proto'
 N = 5
@@ -30,14 +33,21 @@ test_data_loader = JSONFileDataLoader('./data/test.json', max_length=max_length)
 # word_embedder = GloveJsonEmbedder(word_vec_file_name='./data/glove/glove.6B.50d.json')
 # word_embedder = ElmoEmbedder()
 # word_embedder = FasttextEmbedder()
-word_embedder = GloveEmbedder(vec_dim=50)
+word_embedder = GloveEmbedder(vec_dim=100, cuda=cuda)
 
 framework = FewShotREFramework(train_data_loader, val_data_loader, test_data_loader)
-sentence_encoder = CNNSentenceEncoder(word_embedder, max_length, hidden_size=230)
-sentence_encoder = InceptionCNNSentenceEncoder(word_embedder, max_length, sizes=[{3: 200, 5:200, 7:200}, {3: 300, 5:300, 7:300}])
+# sentence_encoder = CNNSentenceEncoder(word_embedder, max_length, hidden_size=230)
+# sentence_encoder = InceptionCNNSentenceEncoder(word_embedder, max_length, pos_embedding_dim=3, sizes=[{3: 230}])
+# sentence_encoder = InceptionCNNSentenceEncoder(word_embedder, max_length, sizes=[{3: 200, 5:200, 7:200}, {3: 300, 5:300, 7:300}])
+sentence_encoder = EntityAwareAttentionRnn(word_embedder, max_length, pos_embedding_dim=0, n_heads=4)
+
+print('Sentence encoder:')
+print(sentence_encoder)
+print('Parameters:')
+print(list(sentence_encoder.named_parameters()))
 
 model = Proto(sentence_encoder, hidden_size=sentence_encoder.hidden_size)
 # print('Model parameters:\n{}'.format(
 #     list(filter(lambda p: p.requires_grad, model.parameters()))))
-framework.train(model, model_name, 4, 20, N, K, 5)
+framework.train(model, model_name, 4, 20, N, K, 5, cuda=cuda)
 

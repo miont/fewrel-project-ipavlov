@@ -1,8 +1,8 @@
+import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-import math
+import torch.functional as F
+
 
 class Embedding(nn.Module):
 
@@ -45,5 +45,3 @@ class Embedding(nn.Module):
         else:
             x = self.word_embedding(word)
         return x
-
-

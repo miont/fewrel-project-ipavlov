@@ -7,13 +7,13 @@ import math
 from torch import optim
 
 class Encoder(nn.Module):
-    def __init__(self, max_length, word_embedding_dim=50, pos_embedding_dim=5, 
+    def __init__(self, max_length, embedding_dim=50, 
                  sizes:List[Dict[int,int]]=None):
         nn.Module.__init__(self)
 
         self.max_length = max_length
         self.embedding_size = sum(sizes[-1].values())
-        self.embedding_dim = word_embedding_dim + pos_embedding_dim * 2
+        self.embedding_dim = embedding_dim
         
         # Convolution blocks
         layers = []
