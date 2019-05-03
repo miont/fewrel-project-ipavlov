@@ -1,6 +1,6 @@
 numpy
 pandas
-pytorch
+torch
 scikit-learn
 allennlp
 gensim
