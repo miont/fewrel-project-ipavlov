@@ -7,7 +7,7 @@ from gensim.models.fasttext import load_facebook_vectors
 
 class FasttextEmbedder(BasicEmbedder):
     """
-    Elmo vector embeddings
+    FastText embeddings
     """
     def __init__(self, vectors_path='data/fasttext/wiki.en.bin', cuda=True):
         super().__init__()
@@ -24,11 +24,6 @@ class FasttextEmbedder(BasicEmbedder):
         vfunc = np.vectorize(func, 
                              signature='()->({})'.format(self.word_vec_dim))
         embeddings = vfunc(words)
-        # embeddings = []
-        # for sent in words:
-        #     embeddings.append(self.wv[sent])
-        # embeddings = np.concatenate(embeddings, axis=0)
-        # print('Embeddings shape: {}'.format(embeddings))
         embeddings = torch.from_numpy(embeddings).float()
         if self.cuda:
             embeddings = embeddings.cuda()

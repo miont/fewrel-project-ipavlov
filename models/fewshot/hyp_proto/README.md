@@ -1,0 +1,1 @@
+Hyperbolic proto net from https://github.com/KhrulkovV/hyperbolic-image-embeddings

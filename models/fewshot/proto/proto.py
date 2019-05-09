@@ -8,11 +8,11 @@ from torch.nn import functional as F
 
 class Proto(FewShotREModel):
     
-    def __init__(self, sentence_encoder, hidden_size=230):
+    def __init__(self, sentence_encoder, hidden_size=230, dropout_prob=0.5):
         super().__init__(sentence_encoder)
         self.hidden_size = hidden_size
         self.fc = nn.Linear(hidden_size, hidden_size)
-        self.drop = nn.Dropout()
+        self.drop = nn.Dropout(dropout_prob)
 
     def __dist__(self, x, y, dim):
         return (torch.pow(x - y, 2)).sum(dim)

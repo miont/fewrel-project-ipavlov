@@ -10,19 +10,30 @@ class ElmoEmbedder(BasicEmbedder):
     """
     Elmo vector embeddings
     """
-    def __init__(self):
+    def __init__(self, cuda_out=True, cuda=False):
         super().__init__()
         options_file = "https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x4096_512_2048cnn_2xhighway/elmo_2x4096_512_2048cnn_2xhighway_options.json"
         weight_file = "https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x4096_512_2048cnn_2xhighway/elmo_2x4096_512_2048cnn_2xhighway_weights.hdf5"
+        self.cuda = cuda
+        self.cuda_out = cuda_out
         print('Init Elmo')
-        self.elmo = Elmo(options_file, weight_file, 1, dropout=0).cuda()
+        self.elmo = Elmo(options_file, weight_file, 1, dropout=0)
+        if cuda:
+            self.elmo = self.elmo.cuda()
+        else:
+            self.elmo = self.elmo.cpu()
         self.word_vec_dim = 1024
 
     def embed(self, words:np.ndarray):
         character_ids = batch_to_ids(words)
-        embeddings = self.elmo(character_ids.cuda())
+        if self.cuda:
+            character_ids = character_ids.cuda()
+        embeddings = self.elmo(character_ids)
         # print(embeddings)
-        return embeddings['elmo_representations'][0]
+        embeddings = embeddings['elmo_representations'][0]
+        if self.cuda_out:
+            embeddings = embeddings.cuda()
+        return embeddings
 
     def __call__(self, words:np.ndarray):
         return self.embed(words)

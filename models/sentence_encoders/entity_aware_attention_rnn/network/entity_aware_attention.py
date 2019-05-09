@@ -5,7 +5,8 @@ import torch.nn.functional as F
 import utils.utils as utils
 
 class EntityAwareAttention(nn.Module):
-    def __init__(self, max_length=40, hidden_dim=300, attention_dim=50, pos_emb_dim=50, num_latent_types=3, verbose=False):
+    def __init__(self, max_length=40, hidden_dim=300, attention_dim=50, 
+                 pos_emb_dim=50, num_latent_types=3, verbose=False):
         nn.Module.__init__(self)
         self.verbose = verbose
         self.max_length = max_length

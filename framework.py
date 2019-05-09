@@ -149,7 +149,7 @@ class FewShotREFramework:
             right = model.accuracy(pred, label)
             optimizer.zero_grad()
             loss.backward()
-            nn.utils.clip_grad_norm(parameters_to_optimize, 10)
+            nn.utils.clip_grad_norm_(parameters_to_optimize, 10)
             optimizer.step()
             
             iter_loss += self.item(loss.data)
@@ -185,6 +185,7 @@ class FewShotREFramework:
         print("Finish training " + model_name)
         test_acc = self.eval(model, B, N_for_eval, K, Q, test_iter, ckpt=os.path.join(ckpt_dir, model_name + '.pth.tar'))
         print("Test accuracy: {}".format(test_acc))
+        return test_acc
 
     def eval(self,
             model,
