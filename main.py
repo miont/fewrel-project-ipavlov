@@ -33,13 +33,13 @@ test_data_loader = JSONFileDataLoader('./data/test.json', max_length=max_length,
 
 # word_embedder = GloveJsonEmbedder(word_vec_file_name='./data/glove/glove.6B.50d.json')
 # word_embedder = ElmoEmbedder(cuda=True, cuda_out=cuda)
-# word_embedder = FasttextEmbedder(cuda=cuda)
-word_embedder = GloveEmbedder(vec_dim=100, cuda=cuda)
+word_embedder = FasttextEmbedder(cuda=cuda)
+# word_embedder = GloveEmbedder(vec_dim=100, cuda=cuda)
 
 framework = FewShotREFramework(train_data_loader, val_data_loader, test_data_loader)
-# sentence_encoder = CNNSentenceEncoder(word_embedder, max_length, hidden_size=230)
+sentence_encoder = CNNSentenceEncoder(word_embedder, max_length, hidden_size=230)
 # sentence_encoder = InceptionCNNSentenceEncoder(word_embedder, max_length, pos_embedding_dim=3, sizes=[{3: 230}])
-sentence_encoder = InceptionCNNSentenceEncoder(word_embedder, max_length, sizes=[{3: 200, 5:200, 7:200}, {3: 300, 5:300, 7:300}])
+# sentence_encoder = InceptionCNNSentenceEncoder(word_embedder, max_length, sizes=[{3: 200, 5:200, 7:200}, {3: 300, 5:300, 7:300}])
 # sentence_encoder = EntityAwareAttentionRnn(
 #                        word_embedder, max_length, hidden_size=100, 
 #                        pos_embedding_dim=50, n_heads=4, 

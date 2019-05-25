@@ -25,15 +25,33 @@ class ElmoEmbedder(BasicEmbedder):
         self.word_vec_dim = 1024
 
     def embed(self, words:np.ndarray):
+        sent_max_len = words.shape[-1]
+        # print(words)
+        words = self._sent_array_to_list(words)
+        # print(words)
         character_ids = batch_to_ids(words)
         if self.cuda:
             character_ids = character_ids.cuda()
         embeddings = self.elmo(character_ids)
+
         # print(embeddings)
         embeddings = embeddings['elmo_representations'][0]
+        # Add paddings to sentence max length
+        embeddings_pad = torch.zeros(embeddings.shape[0], 
+                               sent_max_len, embeddings.shape[2])
+        embeddings_pad[:,:embeddings.shape[1], :] = embeddings
+        embeddings = embeddings_pad
+        # print(embeddings_pad.shape)
         if self.cuda_out:
             embeddings = embeddings.cuda()
         return embeddings
 
     def __call__(self, words:np.ndarray):
         return self.embed(words)
+
+    @staticmethod
+    def _sent_array_to_list(words:np.ndarray):
+        sents = words.tolist()
+        for i, sent in enumerate(sents):
+            sents[i] = sent[:sent.index('') if '' in sent else len(sent)]
+        return sents
